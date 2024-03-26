@@ -181,7 +181,7 @@ if ($virtualMachine.properties.storageProfile.dataDisks.Count -eq 1) {
 
 $dataDisk = $virtualMachine.properties.storageProfile.dataDisks[0]
 if ($dataDisk.lun -eq 42) { 
-    Write-Output "`u{2705} Checked if data disk has a proper LU - OK"
+    Write-Output "`u{2705} Checked if data disk has a proper LUN - OK"
 } else { 
     throw "Unable to verify data disk LUN. Expected - 42, got - $($dataDisk.lun). Please delete the virtual machine and create it again or follow the documentation for deataching data disk: https://learn.microsoft.com/en-us/powershell/module/az.compute/remove-azvmdatadisk?view=azps-11.4.0. After that, attach data disk to the VM using lun '42' and try again. "
 }
