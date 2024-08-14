@@ -198,7 +198,24 @@ if ($dataDisk.managedDisk.storageAccountType -eq 'Premium_LRS') {
 
 # Check the log from the script, which supposed to be started by the new version 
 # of the todo app systemd unit config file: azure_task_3_attach_data_disk/app/start.sh. 
-# The expected output should look like this: 
+# There are 2 possible solutions for this task here: 
+# 1-st solution. The expected output should look like this: 
+# 
+# NAME    HCTL        SIZE MOUNTPOINT
+# loop0              63.9M /snap/core20/2182
+# loop1                87M /snap/lxd/27428
+# loop2              39.1M /snap/snapd/21184
+# sda     1:0:0:42     64G        <--- that the first of 2 lines we are looking for, it proves that disk with LUN 42 is mounted
+# └─sda1               64G /data           
+# sdb     0:0:0:0      30G 
+# ├─sdb1             29.9G /
+# ├─sdb14               4M 
+# └─sdb15             106M /boot/efi
+# sdc     0:0:0:1       4G 
+# └─sdc1                4G /mnt
+#
+# 2-nd solution. The expected output should look like this: 
+# 
 # NAME    HCTL        SIZE MOUNTPOINT
 # loop0              63.9M /snap/core20/2182
 # loop1                87M /snap/lxd/27428
@@ -211,6 +228,11 @@ if ($dataDisk.managedDisk.storageAccountType -eq 'Premium_LRS') {
 # └─sdb15             106M /boot/efi
 # sdc     0:0:0:1       4G 
 # └─sdc1                4G /mnt
+# 
+# To find 2 lines (for the first possible solution) and 1 line (for the second possible solution), we will 
+# use regular expressions bellow. Feel free to test how they work using an online tool: https://regexr.com/
+$lsblkRegex1 = '[a-z]{3}[ ]{1,}\d:\d:\d:42[ ]{1,}64G[ ]{1,}\n└─[a-z]{3}\d[ ]{1,}64G[ ]{1,}\/data'
+$lsblkRegex2 = '[a-z]{3}[ ]{1,}\d:\d:\d:42[ ]{1,}64G[ ]{1,}\/data'
 $response = (Invoke-WebRequest -Uri "http://$($pip.properties.dnsSettings.fqdn):8080/static/files/task3.log" -ErrorAction SilentlyContinue -SkipHttpErrorCheck) 
 if ($response) { 
     Write-Output "`u{2705} Checked if the web application is running - OK"
@@ -228,7 +250,7 @@ if ($response) {
         throw "Unable to verify the new version of the web app. Please make sure that the new version of the dodo app is deployed to the VM, that new systemd unit config file is deployed, that you restarted the service after the systemd config file update and try again."
     }
 
-    if ($taskLogContent.Contains("42     64G /data")) { 
+    if ($taskLogContent -match $lsblkRegex1 -or $taskLogContent -match $lsblkRegex2) { 
         Write-Output "`u{2705} Checked if the disk is mounted to the VM - OK"
     } else { 
         throw "Unable to verify that the file system was created on the data disk, and that it's mounted to the VM. Please mount the disk to the VM, restart the todoapp service and try again."
