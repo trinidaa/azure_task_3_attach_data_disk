@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Переходим в рабочую директорию
-cd /app || exit 1
+cd /data/app || exit 1
 
 # Абсолютные пути к бинарникам
 PYTHON=/usr/bin/python3
